@@ -39,7 +39,7 @@ datasources:
   bigquery:
     class_name: SqlAlchemyDatasource
     module_name: great_expectations.datasource
-    connection_string: bigquery://testfalab/testfalab_table?credentials_path=./credentials/credentials.json
+    connection_string: bigquery://[dataset]/[table]?credentials_path=./credentials/credentials.json
     data_asset_type:
       class_name: SqlAlchemyDataset
       module_name: great_expectations.dataset
