@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataquality-api
+  namespace: dataquality-api
+spec:
+  selector:
+    matchLabels:
+      app: dataquality
+      department: data
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: dataquality
+        department: data
+    spec:
+      containers:
+      - name: dataquality-api
+        image: "us-central1-docker.pkg.dev/axial-willow-325315/data-quality/dataquality-api:1.0"

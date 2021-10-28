@@ -6,6 +6,7 @@ from google.oauth2 import service_account
 from src.utils.upload_process import upload_blob
 from src.utils.utils import get_project_path
 from src.utils import batch_validations
+from werkzeug.exceptions import NotFound
 
 
 @app.route('/validation_column_between', methods=['GET'])
@@ -131,35 +132,38 @@ def create_expectation_file(invalid_values, table_id, table,
     Returns:
         str: name of file and bucket saved.
     """
-    credentials = service_account.Credentials.from_service_account_file(f'{get_project_path()}/credentials/credentials.json')
-    project_id = gcp_project
-    client = bigquery.Client(credentials=credentials, project=project_id)
-    value_rejected = "value_rejected"
-    query = f"""
-        SELECT {table_id}, {column_name} as {value_rejected}
-        FROM {dataset}.{table}
-        WHERE {column_name} IN {tuple(invalid_values)}
-    """
-    query_job = client.query(query)
+    try: 
+        credentials = service_account.Credentials.from_service_account_file(f'{get_project_path()}/credentials/credentials.json')
+        project_id = gcp_project
+        client = bigquery.Client(credentials=credentials, project=project_id)
+        value_rejected = "value_rejected"
+        query = f"""
+            SELECT {table_id}, {column_name} as {value_rejected}
+            FROM {dataset}.{table}
+            WHERE {column_name} IN {tuple(invalid_values)}
+        """
+        query_job = client.query(query)
 
-    results = query_job.result()
-    result_dataframe = results.to_dataframe()
-    dataTypeDict = dict(result_dataframe.dtypes)
-    result_dataframe['validation_type'] = dataTypeDict.get(value_rejected)
-    result_dataframe=result_dataframe[[table_id, 'validation_type', value_rejected]]
+        results = query_job.result()
+        result_dataframe = results.to_dataframe()
+        dataTypeDict = dict(result_dataframe.dtypes)
+        result_dataframe['validation_type'] = dataTypeDict.get(value_rejected)
+        result_dataframe=result_dataframe[[table_id, 'validation_type', value_rejected]]
 
-    ### Creating local file csv
-    timestamp_validation = time.time_ns() // 1000000 
-    file_name = f"{column_name}_{timestamp_validation}_rechazados.csv"
-    source_file_name = f"{get_project_path()}/results/{file_name}"
-    result_dataframe.to_csv(source_file_name, index=False, sep='\t')
+        ### Creating local file csv
+        timestamp_validation = time.time_ns() // 1000000 
+        file_name = f"{column_name}_{timestamp_validation}_rechazados.csv"
+        source_file_name = f"{get_project_path()}/results/{file_name}"
+        result_dataframe.to_csv(source_file_name, index=False, sep='\t')
 
-    ### Up Blob to GCS
-    response = upload_blob(
-        bucket_name=target_bucket,
-        source_file_name=source_file_name,
-        destination_blob_name=file_name,
-        gcp_project=gcp_project
-    )
+        ### Up Blob to GCS
+        response = upload_blob(
+            bucket_name=target_bucket,
+            source_file_name=source_file_name,
+            destination_blob_name=file_name,
+            gcp_project=gcp_project
+        )
+    except Exception as e:
+        raise NotFound(e) 
     
     return response

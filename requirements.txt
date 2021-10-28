@@ -16,3 +16,4 @@ sqlalchemy==1.4.25
 pybigquery==0.10.2
 google-cloud-bigquery-storage==2.9.0
 get-project-root==0.2
+inflection==0.5.1

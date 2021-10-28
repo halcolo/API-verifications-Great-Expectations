@@ -22,11 +22,13 @@ WORKDIR /opt/validation-api
 # copy all files in this directory
 ADD . .
 
-# pip install all requirements
+# pip install all requirements and upgrade pip
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Expose port 5000
 EXPOSE 5000
+EXPOSE 8000
 
 # start app server 
 CMD python main.py runserver
